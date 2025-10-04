@@ -14,3 +14,18 @@ const escapeHtml = s =>
         '>': "&gt;",
         '"': "&quot;"
     }[c]));
+
+
+function log(msg, type = 'info'){
+    const color = type === "error" ? 'var(--err)' : type === "warn" ? 'var(--warn)' : 'var(--brand)';
+
+    const time = new Date().toLocaleTimeString();
+
+    const line = document.createElement("div");
+
+    line.innerHTML = `<span style = "color: ${color}"> [${time}]</span> ${escapeHtml(msg)}`
+
+    out.appendChild(line);
+    out.scrollTop = out.scrollHeight;
+
+}
