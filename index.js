@@ -72,3 +72,99 @@ function makeEditor(id, mode) {
 const ed_html = makeEditor("ed_html", "ace/mode/html");
 const ed_css = makeEditor("ed_css", "ace/mode/css");
 const ed_js = makeEditor("ed_js", "ace/mode/javascript");
+
+const TAB_ORDER = ["html", "css", "js"];
+
+const wraps = Object.fromEntries($$('#webEditors .editor-wrap').map(w => [w.dataset.pane, w]));
+
+const editors = {
+    html: ed_html,
+    css: ed_css,
+    js: ed_js
+};
+
+function activePane(){
+    const t = $("#webTabs.tab.active"); //CSS
+    return t ? t.dataset.pane : "html"; //html
+}
+
+function showPane(){
+    TAB_ORDER.forEach(k => {
+        if(wraps[k] ){
+            wraps[k].hidden = (k !== name);
+        }
+    })
+
+    $$("#webTabs.tab").forEach(t => {
+        const on = t.dataset.pane === name;
+        t.classList.toggle("active", on);
+        t.setAttribute("aria-selected", on);
+        t.tabIndex = on ? 0: -1;
+    });
+
+    requestAnimationFrame(() => {
+        const ed = editors[name];
+        if(ed && ed.resize){
+            ed.resize(true);
+            ed.focus();
+        }
+    })
+}
+
+$("#webTabs")?.addEventListener("click", (e) => {
+    const btn = e.target.closest(".tab");
+    if(!btn){
+        return
+    }
+
+    showPane(btn.dataset.pane)
+
+})
+
+$("#webTabs")?.addEventListener("keydown", (e) => {
+    const idx = TAB_ORDER.indexOf(activePane());
+    if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+        const delta = e.key === "ArrowLeft" ? -1 : 1;
+        showPane(TAB_ORDER[(idx + delta + TAB_ORDER.length) % TAB_ORDER.length])
+    }
+})
+
+showPane("html");
+
+function buildwebSrcdoc(withTest = False){
+    const html = ed_html.getValue();
+    const css = ed_css.getValue();
+    const js =ed_js.getValue();
+    
+    const tests = ($("#testArea")?.value  || '').trim();
+
+    return `
+    <!DOCTYPE html>
+    
+    <html lang="en" dir="itr">
+        <head>
+           <meta charset="UTF-8">
+           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+           <style>
+             ${css}\n
+           </style>
+        </head>
+
+        <body>
+          ${html}
+
+          <script> 
+           try{
+           
+               ${js}
+
+               ${withTest && tests ? `\n/* tests */\n${tests}`: ''}
+           } catch(e){
+            console.log(e)
+           }
+          <\/script>
+        </body>
+    
+    <html>`
+}
